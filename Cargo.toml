@@ -1,0 +1,23 @@
+[package]
+name = "schnapsshot"
+version = "0.1.0"
+edition = "2021"
+authors = ["Nicolas M."]
+description = "Schnaps-Shot: Add a border and exif data to a jpg or png photo"
+license = "MIT"
+
+[[bin]]
+name = "schnapsshot"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.0", features = ["derive"] }
+image = { version = "0.24", features = ["jpeg", "png"] }
+imageproc = "0.23"
+rusttype = "0.9"
+kamadak-exif = "0.5"
+palette = "0.7"
+kmeans_colors = "0.5"
+
+[dev-dependencies]
+tempfile = "3.0"
