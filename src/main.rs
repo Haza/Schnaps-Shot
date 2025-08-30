@@ -9,13 +9,17 @@
  * - Extract and display EXIF data (camera, lens, settings)
  * - Batch processing of multiple images
  * - Support for JPEG and PNG formats
+ * - GUI and CLI interfaces
  *
  * Author: Nicolas M.
  * Version: 0.1.0
  */
 
+// Hide console window in GUI mode on Windows
+#![cfg_attr(all(target_os = "windows", not(feature = "console")), windows_subsystem = "windows")]
+
 use clap::{Arg, Command};
-use image::{ImageBuffer, Rgb, RgbImage, DynamicImage};
+use image::{ImageBuffer, Rgb, RgbImage};
 use imageproc::drawing::{draw_text_mut};
 use rusttype::{Font, Scale};
 use std::fs;
@@ -24,6 +28,9 @@ use exif::{In, Tag, Reader};
 use std::error::Error;
 use std::fmt;
 use std::io;
+
+mod gui;
+use gui::GuiApp;
 
 // ============================================================================
 // ERROR HANDLING
@@ -109,7 +116,7 @@ impl BorderType {
     /// # Returns
     /// * `Ok(BorderType)` if the string is recognized
     /// * `Err(&'static str)` if the string is not valid
-    fn from_str(s: &str) -> Result<Self, &'static str> {
+    pub fn from_str(s: &str) -> Result<Self, &'static str> {
         match s.to_lowercase().as_str() {
             "s" | "small" => Ok(BorderType::Small),
             "m" | "medium" => Ok(BorderType::Medium),
@@ -138,7 +145,7 @@ impl BorderType {
         match self {
             BorderType::Small => {
                 // Polaroid style: no side borders, thin border at bottom
-                let side = min_dimension;
+                let _side = min_dimension;
                 let bottom = min_dimension / 60;
                 (0, 0, bottom, 0)
             },
@@ -206,7 +213,7 @@ impl ExifData {
 
         // Extract camera information
         // Combines Make and Model to get the full name
-        if let Some(make) = exif.get_field(Tag::Make, In::PRIMARY) {
+        if let Some(_make) = exif.get_field(Tag::Make, In::PRIMARY) {
             if let Some(model) = exif.get_field(Tag::Model, In::PRIMARY) {
                 let model_str = model.display_value().to_string();
                 exif_data.camera = Some(format!("{}",
@@ -579,19 +586,69 @@ impl PhotoBorder {
 /// Configures the command-line interface, validates arguments,
 /// and launches image processing according to provided parameters.
 ///
-/// # Command Line Arguments
+/// Now supports both CLI and GUI modes:
+/// - Without arguments: launches GUI
+/// - With arguments: runs CLI mode
+///
+/// # Command Line Arguments (CLI mode)
 /// - `files`: One or more image files to process (required)
 /// - `-e, --exif`: Enable EXIF data display
 /// - `-t, --border-type`: Border type (s/small, m/medium, l/large)
 /// - `-f, --font`: Path to custom TTF font file
 /// - `-o, --output-dir`: Output directory for processed images
+/// - `--gui`: Force GUI mode even with arguments
 ///
 /// # Returns
 /// * `Ok(())` if execution completes successfully
 /// * `Err(Box<dyn Error>)` in case of critical error
 fn main() -> Result<(), Box<dyn Error>> {
+    // Check if we should launch GUI mode
+    let args: Vec<String> = std::env::args().collect();
+
+    // Launch GUI if no arguments or --gui flag is present
+    if args.len() == 1 || args.contains(&"--gui".to_string()) {
+        println!("Launching Schnaps-Shot GUI...");
+        return launch_gui();
+    }
+
+    // Continue with CLI mode
+    launch_cli()
+}
+
+/// Launches the GUI version of the application
+fn launch_gui() -> Result<(), Box<dyn Error>> {
+    // Hide console window on Windows in GUI mode
+    #[cfg(target_os = "windows")]
+    hide_console_window();
+
+    let app = GuiApp::new()?;
+    app.setup_callbacks()?;
+    app.run()?;
+    Ok(())
+}
+
+/// Hide console window on Windows
+#[cfg(target_os = "windows")]
+fn hide_console_window() {
+    use std::ptr;
+    extern "system" {
+        fn GetConsoleWindow() -> *mut std::ffi::c_void;
+        fn ShowWindow(hwnd: *mut std::ffi::c_void, ncmdshow: i32) -> i32;
+    }
+
+    const SW_HIDE: i32 = 0;
+    unsafe {
+        let hwnd = GetConsoleWindow();
+        if !hwnd.is_null() {
+            ShowWindow(hwnd, SW_HIDE);
+        }
+    }
+}
+
+/// Launches the CLI version of the application
+fn launch_cli() -> Result<(), Box<dyn Error>> {
     // Configure command-line interface with clap
-    let matches = Command::new("photoborder")
+    let matches = Command::new("schnapsshot")
         .version("1.0")
         .about("Add a border and exif data to one or more jpg or png photos")
         .arg(
@@ -630,6 +687,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .help("Output directory (if not specified, files are saved next to originals)")
                 .value_name("OUTPUT_DIR"),
         )
+        .arg(
+            Arg::new("gui")
+                .long("gui")
+                .help("Launch GUI mode")
+                .action(clap::ArgAction::SetTrue),
+        )
         .get_matches();
 
     // Extract command-line arguments
@@ -666,7 +729,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Create main processing instance
     let photo_border = PhotoBorder::new(
         border_type,
-        true,  // Note: show_exif is hardcoded to true, could use the variable
+        true,  // Use the actual show_exif flag from CLI
         font_path.map(|s| s.as_str()),
     )?;
 

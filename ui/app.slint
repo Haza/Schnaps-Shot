@@ -1,0 +1,244 @@
+import { Button, VerticalBox, HorizontalBox, ComboBox, CheckBox, LineEdit, ScrollView } from "std-widgets.slint";
+
+export component AppWindow inherits Window {
+    title: "Schnaps-Shot - Photo Border Tool";
+    min-width: 800px;
+    min-height: 600px;
+
+    // Properties
+    in-out property <string> selected-files: "";
+    in-out property <string> output-directory: "";
+    in-out property <bool> show-exif: true;
+    in-out property <string> border-type: "small";
+    in-out property <string> font-path: "";
+    in-out property <string> status-text: "Ready";
+    in-out property <bool> processing: false;
+
+    // Callbacks
+    callback select-files();
+    callback select-output-dir();
+    callback select-font();
+    callback process-images();
+
+    VerticalBox {
+        padding: 20px;
+        spacing: 15px;
+
+        // Header
+        HorizontalBox {
+            alignment: center;
+
+            Text {
+                text: "Schnaps-Shot Photo Border Tool";
+                font-size: 24px;
+                color: #2c3e50;
+            }
+        }
+
+        // File Selection Section
+        VerticalBox {
+            spacing: 10px;
+
+            Text {
+                text: "Select Images";
+                font-size: 16px;
+                color: #34495e;
+            }
+
+            HorizontalBox {
+                spacing: 10px;
+
+                Rectangle {
+                    background: #ecf0f1;
+                    border-radius: 5px;
+                    border-width: 1px;
+                    border-color: #bdc3c7;
+                    height: 40px;
+
+                    Text {
+                        text: selected-files != "" ? selected-files : "No files selected";
+                        color: selected-files != "" ? #2c3e50 : #95a5a6;
+                        vertical-alignment: center;
+                        horizontal-alignment: left;
+                        x: 10px;
+                    }
+                }
+
+                Button {
+                    text: "Browse...";
+                    width: 100px;
+                    clicked => {
+                        select-files();
+                    }
+                }
+            }
+        }
+
+        // Output Directory Section
+        VerticalBox {
+            spacing: 10px;
+
+            Text {
+                text: "Output Directory (optional)";
+                font-size: 16px;
+                color: #34495e;
+            }
+
+            HorizontalBox {
+                spacing: 10px;
+
+                Rectangle {
+                    background: #ecf0f1;
+                    border-radius: 5px;
+                    border-width: 1px;
+                    border-color: #bdc3c7;
+                    height: 40px;
+
+                    Text {
+                        text: output-directory != "" ? output-directory : "Same as input files";
+                        color: output-directory != "" ? #2c3e50 : #95a5a6;
+                        vertical-alignment: center;
+                        horizontal-alignment: left;
+                        x: 10px;
+                    }
+                }
+
+                Button {
+                    text: "Browse...";
+                    width: 100px;
+                    clicked => {
+                        select-output-dir();
+                    }
+                }
+            }
+        }
+
+        // Settings Section
+        HorizontalBox {
+            spacing: 20px;
+
+            // Border Type
+            VerticalBox {
+                spacing: 10px;
+
+                Text {
+                    text: "Border Type";
+                    font-size: 14px;
+                    color: #34495e;
+                }
+
+                ComboBox {
+                    model: ["Small", "Medium", "Large"];
+                    current-value: border-type == "small" ? "Small" : border-type == "medium" ? "Medium" : "Large";
+                    selected => {
+                        border-type = self.current-value == "Small" ? "small" : self.current-value == "Medium" ? "medium" : "large";
+                    }
+                }
+            }
+
+            // EXIF Option
+            VerticalBox {
+                spacing: 10px;
+
+                Text {
+                    text: "Options";
+                    font-size: 14px;
+                    color: #34495e;
+                }
+
+                CheckBox {
+                    text: "Show EXIF data";
+                    checked: show-exif;
+                    toggled => {
+                        show-exif = self.checked;
+                    }
+                }
+            }
+        }
+
+        // Font Selection Section
+        VerticalBox {
+            spacing: 10px;
+
+            Text {
+                text: "Custom Font (optional)";
+                font-size: 14px;
+                color: #34495e;
+            }
+
+            HorizontalBox {
+                spacing: 10px;
+
+                Rectangle {
+                    background: #ecf0f1;
+                    border-radius: 5px;
+                    border-width: 1px;
+                    border-color: #bdc3c7;
+                    height: 35px;
+
+                    Text {
+                        text: font-path != "" ? font-path : "Default font (DejaVu Sans)";
+                        color: font-path != "" ? #2c3e50 : #95a5a6;
+                        vertical-alignment: center;
+                        horizontal-alignment: left;
+                        x: 10px;
+                        font-size: 12px;
+                    }
+                }
+
+                Button {
+                    text: "Browse...";
+                    width: 100px;
+                    clicked => {
+                        select-font();
+                    }
+                }
+            }
+        }
+
+        // Process Button
+        HorizontalBox {
+            alignment: center;
+
+            Button {
+                text: processing ? "Processing..." : "Process Images";
+                enabled: selected-files != "" && !processing;
+                width: 200px;
+                height: 50px;
+                clicked => {
+                    process-images();
+                }
+            }
+        }
+
+        // Status Section
+        VerticalBox {
+            spacing: 10px;
+
+            Text {
+                text: "Status";
+                font-size: 14px;
+                color: #34495e;
+            }
+
+            Rectangle {
+                background: #f8f9fa;
+                border-radius: 5px;
+                border-width: 1px;
+                border-color: #dee2e6;
+                height: 100px;
+
+                ScrollView {
+                    Text {
+                        text: status-text;
+                        color: #495057;
+                        wrap: word-wrap;
+                        x: 10px;
+                        y: 10px;
+                        width: parent.width - 20px;
+                    }
+                }
+            }
+        }
+    }
+}
