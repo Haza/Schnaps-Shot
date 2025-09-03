@@ -13,7 +13,7 @@ jobs:
             os: windows-latest
             name: schnapsshot-windows-x64.exe
           - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
+            os: ubuntu-22.04
             name: schnapsshot-linux-x64
           - target: x86_64-apple-darwin
             os: macos-latest
