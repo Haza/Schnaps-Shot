@@ -43,28 +43,26 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Flatten artifacts and match folder names
+      - name: Flatten artifacts to top-level
         run: |
-          shopt -s globstar nullglob
+          shopt -s nullglob
           for dir in artifacts/*; do
             if [ -d "$dir" ]; then
-              folder_name=$(basename "$dir")
               for f in "$dir"/*; do
-                dest="artifacts/$folder_name"
-                # Only move if source is not already the destination
-                if [ "$f" != "$dest" ]; then
-                  mv "$f" "$dest"
-                fi
+                mv -n "$f" "artifacts/$(basename "$dir")"
               done
             fi
           done
 
-      - name: Create Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: artifacts/*
