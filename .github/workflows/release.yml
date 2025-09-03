@@ -48,14 +48,18 @@ jobs:
         with:
           path: artifacts
 
-      - name: Flatten artifacts and keep artifact names
+      - name: Flatten artifacts and match folder names
         run: |
+          shopt -s globstar nullglob
           for dir in artifacts/*; do
             if [ -d "$dir" ]; then
+              folder_name=$(basename "$dir")
               for f in "$dir"/*; do
-                artifact_name=$(basename "$dir")  # folder name = artifact name
-                ext="${f##*.}"
-                mv "$f" "artifacts/$artifact_name"  # preserves original name
+                dest="artifacts/$folder_name"
+                # Only move if source is not already the destination
+                if [ "$f" != "$dest" ]; then
+                  mv "$f" "$dest"
+                fi
               done
             fi
           done
