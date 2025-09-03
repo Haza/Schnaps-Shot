@@ -48,10 +48,17 @@ jobs:
         with:
           path: artifacts
 
+      - name: Flatten artifacts
+        run: |
+          shopt -s globstar nullglob
+          for f in artifacts/*/*; do
+            mv "$f" artifacts/
+          done
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: artifacts/**
+          files: artifacts/*
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
