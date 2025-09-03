@@ -244,7 +244,8 @@ impl GuiApp {
                 .arg(script)
                 .output()?;
 
-            let result = String::from_utf8_lossy(&output.stdout).trim();
+            let output_str = String::from_utf8_lossy(&output.stdout);
+            let result = output_str.trim();
             if result.is_empty() {
                 Ok(Vec::new())
             } else if multiple {
@@ -315,7 +316,8 @@ impl GuiApp {
                 .arg(r#"tell application "System Events" to return POSIX path of (choose folder with prompt "Select Output Directory")"#)
                 .output()?;
 
-            let result = String::from_utf8_lossy(&output.stdout).trim();
+            let output_str = String::from_utf8_lossy(&output.stdout);
+            let result = output_str.trim();
             Ok(if result.is_empty() { None } else { Some(result.to_string()) })
         }
 
@@ -368,9 +370,9 @@ impl GuiApp {
                 .arg(r#"tell application "System Events" to return POSIX path of (choose file with prompt "Select Font" of type {"ttf", "otf"})"#)
                 .output()?;
 
-            let result = String::from_utf8_lossy(&output.stdout).trim();
-            Ok(if result.is_empty() { None } else { Some(result.to_string()) })
-        }
+            let output_str = String::from_utf8_lossy(&output.stdout);
+            let result = output_str.trim();
+            Ok(if result.is_empty() { None } else { Some(result.to_string()) })        }
 
         #[cfg(target_os = "linux")]
         {
