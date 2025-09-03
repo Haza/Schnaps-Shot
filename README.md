@@ -8,6 +8,11 @@
 - Support for JPG and PNG
 - Designed for seamless integration as a **Lightroom Export Action**
 
+Drag&Drop images is also supported
+
+![drag and drop](https://i.imgur.com/Wrucxxj.gif)
+
+
 ## 🚀 Installation
 ```bash
 # Build with Cargo
