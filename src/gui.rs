@@ -198,13 +198,14 @@ impl GuiApp {
         Ok(status)
     }
 
-    fn open_file_dialog(_multiple: bool) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    fn open_file_dialog(multiple: bool) -> Result<Vec<String>, Box<dyn std::error::Error>> {
         use std::process::Command;
 
         // Try to use native file dialog through system commands
         // This is a simplified implementation - in a real app you might want to use a crate like rfd
         #[cfg(target_os = "windows")]
         {
+            let _used_for_other_os = multiple;
             // Windows PowerShell command for file dialog
             let output = Command::new("powershell")
                 .arg("-Command")

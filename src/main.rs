@@ -16,7 +16,7 @@
  */
 
 // Hide console window in GUI mode on Windows
-#![cfg_attr(all(target_os = "windows", not(feature = "console")), windows_subsystem = "windows")]
+#![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
 
 use clap::{Arg, Command};
 use image::{ImageBuffer, Rgb, RgbImage};
@@ -630,7 +630,6 @@ fn launch_gui() -> Result<(), Box<dyn Error>> {
 /// Hide console window on Windows
 #[cfg(target_os = "windows")]
 fn hide_console_window() {
-    use std::ptr;
     extern "system" {
         fn GetConsoleWindow() -> *mut std::ffi::c_void;
         fn ShowWindow(hwnd: *mut std::ffi::c_void, ncmdshow: i32) -> i32;
@@ -701,7 +700,7 @@ fn launch_cli() -> Result<(), Box<dyn Error>> {
         .cloned()
         .collect();
 
-    let show_exif = matches.get_flag("exif");
+    let _show_exif = matches.get_flag("exif");
     let border_type_str = matches.get_one::<String>("border_type").unwrap();
     let font_path = matches.get_one::<String>("font");
     let output_dir = matches.get_one::<String>("output_dir");
