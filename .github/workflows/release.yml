@@ -51,11 +51,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            artifacts/schnapsshot-windows-x64.exe/schnapsshot.exe
-            artifacts/schnapsshot-linux-x64/schnapsshot
-            artifacts/schnapsshot-macos-intel/schnapsshot
-            artifacts/schnapsshot-macos-arm64/schnapsshot
+          files: artifacts/*
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
