@@ -38,3 +38,24 @@ jobs:
         with:
           name: ${{ matrix.name }}
           path: target/${{ matrix.target }}/release/schnapsshot${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/schnapsshot-windows-x64.exe/schnapsshot.exe
+            artifacts/schnapsshot-linux-x64/schnapsshot
+            artifacts/schnapsshot-macos-intel/schnapsshot
+            artifacts/schnapsshot-macos-arm64/schnapsshot
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
