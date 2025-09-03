@@ -118,29 +118,27 @@ impl GuiApp {
 
                     // Process in background thread
                     let window_weak_clone = window_weak.clone();
-                    thread::spawn(move || {
-                        let result = Self::process_images_background(
-                            files_to_process,
-                            &border_type_str,
-                            show_exif,
-                            if output_dir.is_empty() { None } else { Some(&output_dir) },
-                            if font_path.is_empty() { None } else { Some(&font_path) },
-                        );
+                    let result = Self::process_images_background(
+                        files_to_process,
+                        &border_type_str,
+                        show_exif,
+                        if output_dir.is_empty() { None } else { Some(&output_dir) },
+                        if font_path.is_empty() { None } else { Some(&font_path) },
+                    );
 
-                        // Update UI with result
-                        if let Some(window) = window_weak_clone.upgrade() {
-                            window.set_processing(false);
-                            match result {
-                                Ok(status) => {
-                                    window.set_status_text(status.into());
-                                }
-                                Err(e) => {
-                                    let error_msg = format!("Processing error: {}", e);
-                                    window.set_status_text(error_msg.into());
-                                }
+                    // Update UI with result
+                    if let Some(window) = window_weak_clone.upgrade() {
+                        window.set_processing(false);
+                        match result {
+                            Ok(status) => {
+                                window.set_status_text(status.into());
+                            }
+                            Err(e) => {
+                                let error_msg = format!("Processing error: {}", e);
+                                window.set_status_text(error_msg.into());
                             }
                         }
-                    });
+                    }
                 }
             }
         });

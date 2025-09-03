@@ -28,6 +28,7 @@ use exif::{In, Tag, Reader};
 use std::error::Error;
 use std::fmt;
 use std::io;
+use img_parts::{jpeg::Jpeg, Bytes, ImageEXIF};
 
 mod gui;
 use gui::GuiApp;
@@ -420,6 +421,7 @@ impl PhotoBorder {
 
         // Save final image
         bordered_img.save(&output_path)?;
+        self.save_with_exif(&bordered_img, &output_path, input_path)?;
         println!("Saved bordered image to: {}", output_path.display());
 
         Ok(())
@@ -572,6 +574,65 @@ impl PhotoBorder {
         if error_count > 0 {
             println!("  Errors encountered: {} image(s)", error_count);
         }
+
+        Ok(())
+    }
+
+    /// Saves image with EXIF data preserved from original
+    fn save_with_exif(&self, img: &RgbImage, output_path: &Path, original_path: &Path) -> Result<(), PhotoBorderError> {
+        // First, save the processed image to a temporary buffer
+        let mut processed_buffer = Vec::new();
+        {
+            let mut cursor = std::io::Cursor::new(&mut processed_buffer);
+            // Save as JPEG with high quality
+            img.write_to(&mut cursor, image::ImageOutputFormat::Jpeg(95))
+                .map_err(|e| PhotoBorderError::ImageError(e))?;
+        }
+
+        // Try to read EXIF from original image
+        match self.copy_exif_to_processed(&processed_buffer, original_path, output_path) {
+            Ok(_) => {
+                println!("EXIF data preserved in output image");
+            },
+            Err(e) => {
+                eprintln!("Warning: Could not preserve EXIF data: {}", e);
+                // Save without EXIF as fallback
+                std::fs::write(output_path, &processed_buffer)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Copies EXIF data from original to processed image
+    fn copy_exif_to_processed(&self, processed_jpeg: &[u8], original_path: &Path, output_path: &Path) -> Result<(), PhotoBorderError> {
+        // Read original image to extract EXIF
+        let original_data = std::fs::read(original_path)?;
+        let original_jpeg = Jpeg::from_bytes(Bytes::from(original_data))
+            .map_err(|e| PhotoBorderError::IoError(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("Could not parse original JPEG: {}", e)
+            )))?;
+
+        // Extract EXIF from original
+        let exif_data = original_jpeg.exif()
+            .ok_or_else(|| PhotoBorderError::IoError(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "No EXIF data found in original image"
+            )))?;
+
+        // Parse processed image
+        let mut processed_jpeg = Jpeg::from_bytes(Bytes::from(processed_jpeg.to_vec()))
+            .map_err(|e| PhotoBorderError::IoError(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("Could not parse processed JPEG: {}", e)
+            )))?;
+
+        // Copy EXIF to processed image
+        processed_jpeg.set_exif(Some(exif_data.clone()));
+
+        // Save the final image with EXIF
+        std::fs::write(output_path, processed_jpeg.encoder().bytes())?;
 
         Ok(())
     }

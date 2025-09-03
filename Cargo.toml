@@ -19,10 +19,8 @@ image = { version = "0.24", features = ["jpeg", "png"] }
 imageproc = "0.23"
 rusttype = "0.9"
 kamadak-exif = "0.5"
-palette = "0.7"
-kmeans_colors = "0.5"
 slint = "1.0"
-tokio = { version = "1.0", features = ["full"] }
+img-parts = "0.3"
 
 [dev-dependencies]
 tempfile = "3.0"
