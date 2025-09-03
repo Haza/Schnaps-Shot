@@ -1,8 +1,10 @@
 name: Release Builds
 
+#on:
+#  push:
+#    tags: ['*']
 on:
-  push:
-    tags: ['*']
+  push
 
 jobs:
   build:
@@ -30,6 +32,17 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Cache Cargo registry and build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
@@ -43,29 +56,30 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          path: ./artifacts
 
-      - name: Flatten artifacts to top-level
+      - name: List downloaded artifacts
         run: |
-          shopt -s nullglob
-          for dir in artifacts/*; do
-            if [ -d "$dir" ]; then
-              for f in "$dir"/*; do
-                mv -n "$f" "artifacts/$(basename "$dir")"
-              done
-            fi
-          done
+          echo "Downloaded the following artifacts:"
+          ls -lh ./artifacts
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        id: create_release
+        uses: actions/create-release@v1
         with:
-          files: artifacts/*
-          generate_release_notes: true
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts to release
+        run: |
+          for file in ./artifacts/*; do
+            echo "Uploading $file"
+            gh release upload ${{ github.ref_name }} "$file"
+          done
