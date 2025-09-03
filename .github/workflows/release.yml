@@ -48,11 +48,16 @@ jobs:
         with:
           path: artifacts
 
-      - name: Flatten artifacts
+      - name: Flatten artifacts and keep artifact names
         run: |
-          shopt -s globstar nullglob
-          for f in artifacts/*/*; do
-            mv "$f" artifacts/
+          for dir in artifacts/*; do
+            if [ -d "$dir" ]; then
+              for f in "$dir"/*; do
+                artifact_name=$(basename "$dir")  # folder name = artifact name
+                ext="${f##*.}"
+                mv "$f" "artifacts/$artifact_name"  # preserves original name
+              done
+            fi
           done
 
       - name: Create Release
