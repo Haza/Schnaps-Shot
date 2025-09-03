@@ -1,8 +1,10 @@
 name: Release Builds
 
+#on:
+#  push:
+#    tags: ['*']
 on:
-  push:
-    tags: ['*']
+  push
 
 jobs:
   build:
@@ -12,15 +14,15 @@ jobs:
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             name: schnapsshot-windows-x64.exe
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-            name: schnapsshot-linux-x64
+          #- target: x86_64-unknown-linux-gnu
+          #  os: ubuntu-latest
+          #  name: schnapsshot-linux-x64
           - target: x86_64-apple-darwin
             os: macos-latest
             name: schnapsshot-macos-intel
-          - target: aarch64-apple-darwin
-            os: macos-latest
-            name: schnapsshot-macos-arm64
+          #- target: aarch64-apple-darwin
+          #  os: macos-latest
+          #  name: schnapsshot-macos-arm64
 
     runs-on: ${{ matrix.os }}
 
@@ -29,6 +31,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
+
+      - name: Cache Cargo registry and build artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
@@ -43,15 +56,43 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          path: ./artifacts
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+      - name: List downloaded artifacts
+        run: |
+          echo "Downloaded the following artifacts:"
+          find ./artifacts
+
+      - name: Rename downloaded artifacts
+        run: |
+          echo "Rename artifacts artifacts:"
+          mv ./artifacts/schnapsshot-windows-x64.exe/schnapsshot.exe ./artifacts/schnapsshot-windows-x64.exe/schnapsshot-windows-x64.exe
+          mv ./artifacts/schnapsshot-macos-intel/schnapsshot ./artifacts/schnapsshot-macos-intel/schnapsshot-macos-intel
+          echo "List new artifacts names:"
+          find ./artifacts
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
         with:
-          files: artifacts/**
-          generate_release_notes: true
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # gh release upload ${{ github.ref_name }} ./artifacts/schnapsshot-linux-x64/schnapsshot-linux-x64
+        # gh release upload ${{ github.ref_name }} ./artifacts/schnapsshot-macos-arm64/schnapsshot-macos-arm64
+        run: |
+          gh release upload ${{ github.ref_name }} ./artifacts/schnapsshot-windows-x64.exe/schnapsshot-windows-x64.exe
+          gh release upload ${{ github.ref_name }} ./artifacts/schnapsshot-macos-intel/schnapsshot-macos-intel
