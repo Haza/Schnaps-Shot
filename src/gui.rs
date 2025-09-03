@@ -388,7 +388,6 @@ impl GuiApp {
             let output_str = String::from_utf8_lossy(&output.stdout);
             let result = output_str.trim();
             Ok(if result.is_empty() { None } else { Some(result.to_string()) })
-            Ok(if result.is_empty() { None } else { Some(result.to_string()) })
         }
 
         #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
