@@ -269,7 +269,8 @@ impl GuiApp {
 
             let output = cmd.output()?;
 
-            let result = String::from_utf8_lossy(&output.stdout).trim();
+            let output_str = String::from_utf8_lossy(&output.stdout);
+            let result = output_str.trim();
             if result.is_empty() {
                 Ok(Vec::new())
             } else if multiple {
@@ -329,7 +330,8 @@ impl GuiApp {
                 .arg("--title=Select Output Directory")
                 .output()?;
 
-            let result = String::from_utf8_lossy(&output.stdout).trim();
+            let output_str = String::from_utf8_lossy(&output.stdout);
+            let result = output_str.trim();
             Ok(if result.is_empty() { None } else { Some(result.to_string()) })
         }
 
@@ -372,7 +374,8 @@ impl GuiApp {
 
             let output_str = String::from_utf8_lossy(&output.stdout);
             let result = output_str.trim();
-            Ok(if result.is_empty() { None } else { Some(result.to_string()) })        }
+            Ok(if result.is_empty() { None } else { Some(result.to_string()) })
+        }
 
         #[cfg(target_os = "linux")]
         {
@@ -382,7 +385,9 @@ impl GuiApp {
                 .arg("--file-filter=Font files | *.ttf *.otf")
                 .output()?;
 
-            let result = String::from_utf8_lossy(&output.stdout).trim();
+            let output_str = String::from_utf8_lossy(&output.stdout);
+            let result = output_str.trim();
+            Ok(if result.is_empty() { None } else { Some(result.to_string()) })
             Ok(if result.is_empty() { None } else { Some(result.to_string()) })
         }
 
